@@ -1,2 +1,2 @@
-# AgriConnect Project
+
 # Agriconnect
