@@ -1,126 +1,108 @@
 import { Request } from "express";
-import bcrypt from "bcryptjs";
-import jwt, { Secret, SignOptions } from "jsonwebtoken";
-import User, { IUser } from "../model/usermodel";
-import { ObjectId } from "mongoose";
+import bcrypt from "bcrypt";
+import { userModel } from "../model/userModel";
+import { roleModel } from "../model/roleModel";
+import { userRoleModel } from "../model/userRole.Model";
+import { generateToken } from "../utils/jwt";
+import { tokenPayload } from "../types/auth";
+import { UserResponse } from "../types/userType";
 
-// Generate JWT token
-const generateToken = (userID: string): string => {
-  const secret: Secret = process.env.JWT_SECRETKEY as Secret;
+export const registerService = async (req: Request) => {
+  const { name, email, password, phone, address } = req.body;
 
-  if (!secret) {
-    throw new Error("JWT_SECRETKEY is not defined");
+  if (!name || !email || !password || !phone || !address) {
+    throw new Error("Missing required fields");
   }
 
-  const expiresIn: string = process.env.JWT_EXPIRES_IN || "7d";
+  const existingUser = await userModel.findOne({ email });
+  if (existingUser) throw new Error("User already exists");
 
-  const options: SignOptions = {
-    expiresIn: expiresIn as unknown as import("ms").StringValue, // ✅ cast to StringValue
-  };
-
-  return jwt.sign({ id: userID }, secret, options);
-};
-
-// Input type for registration (exclude Mongoose Document props)
-interface IUserInput {
-  name: string;
-  email: string;
-  password: string;
-  phone?: string;
-  role?: string;
-  isActive?: boolean;
-}
-
-// ------------------------
-// REGISTER SERVICE
-// ------------------------
-export const registerService = async (
-  req: Request
-): Promise<{ user: Partial<IUser>; token: string }> => {
-  const { name, email, password, phone } = req.body;
-
-  // 1️⃣ Check if email already exists
-  const existingEmail = await User.findOne({ email });
-  if (existingEmail) throw new Error("Email already exists");
-
-  // 2️⃣ Check if phone already exists (optional)
-  if (phone) {
-    const existingPhone = await User.findOne({ phone });
-    if (existingPhone) throw new Error("Phone number already in use");
-  }
-
-  // 3️⃣ Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 4️⃣ Create user with proper typing
-  const userInput: IUserInput = {
+  const user = await userModel.create({
     name,
     email,
     password: hashedPassword,
     phone,
-    role: "farmer", // default role
+    address,
     isActive: true,
+  });
+
+  // Default "customer" role
+  let customerRole = await roleModel.findOne({ name: "customer" });
+  if (!customerRole) {
+    customerRole = await roleModel.create({
+      name: "customer",
+      description: "Default role",
+    });
+  }
+
+  await userRoleModel.create({ userId: user._id, roleId: customerRole._id });
+
+  const userRoles = await userRoleModel
+    .find({ userId: user._id })
+    .populate("roleId");
+  const roles = userRoles.map((ur) => (ur.roleId as any).name);
+
+  const payload: tokenPayload = {
+    _id: user._id.toString(),
+    email: user.email,
+    roles,
+  };
+  const token = generateToken(payload);
+
+  const userObj: UserResponse = {
+    _id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    address: user.address,
+    isActive: user.isActive ?? true,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    roles,
   };
 
-  const newUser = await User.create(userInput);
-
-  // 5️⃣ Generate JWT token
-  const token = generateToken((newUser._id as ObjectId).toString());
-
-  // 6️⃣ Return user (without password) and token
-  return {
-    user: {
-      id: (newUser._id as ObjectId).toString(),
-      name: newUser.name,
-      email: newUser.email,
-      phone: newUser.phone,
-      role: newUser.role,
-      isActive: newUser.isActive,
-    },
-    token,
-  };
+  return { user: userObj, token };
 };
 
-// ------------------------
-// LOGIN SERVICE
-// ------------------------
-export const loginService = async (
-  req: Request
-): Promise<{ user: Partial<IUser>; token: string }> => {
+export const loginService = async (req: Request) => {
   const { email, password } = req.body;
+  if (!email || !password) throw new Error("Missing email or password");
 
-  // 1️⃣ Find user
-  const user = await User.findOne({ email });
-  if (!user) throw new Error("User not found");
+  const user = await userModel.findOne({ email });
+  if (!user) throw new Error("Invalid email or password");
 
-  // 2️⃣ Compare password
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw new Error("Invalid credentials");
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) throw new Error("Invalid email or password");
 
-  // 3️⃣ Check if active
-  if (!user.isActive) throw new Error("Account is inactive");
+  const userRoles = await userRoleModel
+    .find({ userId: user._id })
+    .populate("roleId");
+  const roles = userRoles.map((ur) => (ur.roleId as any).name);
 
-  // 4️⃣ Generate token
-  const token = generateToken((user._id as ObjectId).toString());
-
-  // 5️⃣ Return user (without password) and token
-  return {
-    user: {
-      id: (user._id as ObjectId).toString(),
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      isActive: user.isActive,
-    },
-    token,
+  const payload: tokenPayload = {
+    _id: user._id.toString(),
+    email: user.email,
+    roles,
   };
+  const token = generateToken(payload);
+
+  const userObj: UserResponse = {
+    _id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    address: user.address,
+    isActive: user.isActive ?? true,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    roles,
+  };
+
+  return { user: userObj, token };
 };
 
-// ------------------------
-// LOGOUT SERVICE
-// ------------------------
-export const logoutService = async (): Promise<{ message: string }> => {
-  // For JWT, logout is handled client-side by deleting the token
-  return { message: "Logout successful" };
+export const logoutService = async () => {
+  return { message: "Logged out successfully" };
 };

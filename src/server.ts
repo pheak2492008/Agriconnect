@@ -1,4 +1,3 @@
-// src/server.ts
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -7,8 +6,8 @@ import authRoutes from "./routes/authRoutes";
 
 dotenv.config();
 
-const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
-const MONGO_URI = process.env.MONGO_URI || "";
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5000;
+const MONGODB_URI = process.env.MONGODB_URI as string;
 
 export const createServer = async () => {
   const app = express();
@@ -16,13 +15,18 @@ export const createServer = async () => {
 
   // MongoDB connection
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log("✅ MongoDB connected");
+    if (!MONGODB_URI) {
+      throw new Error("❌ MONGODB_URI is missing in .env file");
+    }
+
+    await mongoose.connect(MONGODB_URI);
+    console.log("✅ MongoDB connected!");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
+    process.exit(1);
   }
 
-  // Swagger setup
+  // Swagger
   setupSwagger(app, PORT);
 
   // Test route
@@ -35,12 +39,3 @@ export const createServer = async () => {
 
   return app;
 };
-
-// Start server
-(async () => {
-  const app = await createServer();
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
-    console.log(`📚 Swagger docs: http://localhost:${PORT}/api-docs`);
-  });
-})();

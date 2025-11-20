@@ -23,24 +23,24 @@ const router = Router();
  *               - name
  *               - email
  *               - password
+ *               - phone
+ *               - address
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Srey Pheak"
  *               email:
  *                 type: string
- *                 example: "sreypheak@example.com"
  *               password:
  *                 type: string
- *                 example: "MySecurePassword123"
  *               phone:
  *                 type: string
- *                 example: "0123456789"
+ *               address:
+ *                 type: string
  *     responses:
  *       201:
  *         description: User registered successfully
  *       400:
- *         description: Email or phone already exists
+ *         description: Bad request
  */
 router.post("/register", registerController);
 
@@ -62,10 +62,8 @@ router.post("/register", registerController);
  *             properties:
  *               email:
  *                 type: string
- *                 example: "sreypheak@example.com"
  *               password:
  *                 type: string
- *                 example: "MySecurePassword123"
  *     responses:
  *       200:
  *         description: Login successful
@@ -82,7 +80,7 @@ router.post("/login", loginController);
  *     tags: [Auth]
  *     responses:
  *       200:
- *         description: Logout successful
+ *         description: Logged out successfully
  */
 router.post("/logout", logoutController);
 
