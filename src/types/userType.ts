@@ -8,8 +8,8 @@ export interface IUser {
   name: string;
   email: string;
   password: string;
-  phone?: string | number;
-  address?: string;
+  phone: string | number;
+  address: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -22,8 +22,8 @@ export type UserResponse = {
   _id: string;
   name: string;
   email: string;
-  phone?: string | number;
-  address?: string;
+  phone: string | number;
+  address: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;

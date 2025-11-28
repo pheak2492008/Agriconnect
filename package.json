@@ -7,6 +7,8 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
+    "seedRoles": "ts-node src/seed/seedRole.ts",
+    "seedCategory": "ts-node src/seed/seedCategory.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "seed:admin": "node src/seed/seedAdmin.js"
   },

@@ -1,16 +1,8 @@
-import { Schema, model, Document, Types } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 
-export interface IUserRole extends Document {
-  userId: Types.ObjectId;
-  roleId: Types.ObjectId;
-}
+const userRoleSchema = new Schema({
+  userId: { type: Types.ObjectId, ref: "User", required: true },
+  roleId: { type: Types.ObjectId, ref: "Role", required: true },
+});
 
-const userRoleSchema = new Schema<IUserRole>(
-  {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    roleId: { type: Schema.Types.ObjectId, ref: "Role", required: true },
-  },
-  { timestamps: true }
-);
-
-export const userRoleModel = model<IUserRole>("UserRole", userRoleSchema);
+export const userRoleModel = model("UserRole", userRoleSchema);

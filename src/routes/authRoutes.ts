@@ -5,7 +5,15 @@ import {
   logoutController,
 } from "../controller/authController";
 
+
 const router = Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication APIs
+ */
 
 /**
  * @swagger
@@ -83,5 +91,6 @@ router.post("/login", loginController);
  *         description: Logged out successfully
  */
 router.post("/logout", logoutController);
+
 
 export default router;

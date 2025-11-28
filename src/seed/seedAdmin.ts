@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 
-import { userModel } from "../model/userModel";
-import { roleModel } from "../model/roleModel";
+import { userModel } from "@/model/userModel";
+import { roleModel } from "@/model/roleModel";
 import { userRoleModel } from "../model/userRole.Model"; // <-- fixed
 
 dotenv.config();
@@ -47,9 +47,7 @@ export const seedAdmin = async () => {
         isActive: true,
       });
       console.log("✔️ Admin user created");
-    } else {
-      console.log("✔️ Admin user already exists");
-    }
+    } ;
 
     // 5️⃣ Link Admin User → Admin Role
     const exists = await userRoleModel.findOne({
@@ -76,4 +74,4 @@ export const seedAdmin = async () => {
 };
 
 // Optional: run directly
-if (require.main === module) seedAdmin();
+seedAdmin();

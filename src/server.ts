@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { setupSwagger } from "./config/swagger";
 import authRoutes from "./routes/authRoutes";
+import productRoutes from "./routes/productRoutes";
+import userRoutes from "./routes/userRole";
 
 dotenv.config();
 
@@ -27,7 +29,7 @@ export const createServer = async () => {
   }
 
   // Swagger
-  setupSwagger(app, PORT);
+  setupSwagger(app);
 
   // Test route
   app.get("/", (req: Request, res: Response) => {
@@ -36,6 +38,8 @@ export const createServer = async () => {
 
   // API routes
   app.use("/api/auth", authRoutes);
+  app.use("/api/product", productRoutes);
+  app.use("/api/user", userRoutes);
 
   return app;
 };
